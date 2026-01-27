@@ -1,5 +1,5 @@
 <template>
-  <div class="h-screen flex flex-col p-4 bg-gray-800 gap-4 overflow-hidden relative">
+  <div class="h-screen flex flex-col p-4 bg-gray-700 gap-4 overflow-hidden relative">
     <!-- Toast notification -->
     <div v-if="showToast"
       class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300"
@@ -9,8 +9,16 @@
 
     <!-- Header with title and add panel button -->
     <div class="flex items-center justify-between flex-shrink-0">
-      <div class="flex items-center gap-4">
-        <h1 class="text-lg font-semibold text-white">Formatter Workspace</h1>
+      <div class="flex items-center gap-2">
+        <h1 class="text-lg font-bold text-white font-logo tracking-tighter flex items-center gap-2">
+          <span>Formatter</span>
+
+          <!-- Inline Theme Toggle -->
+          <ThemeToggle />
+
+          <span>Workspace</span>
+        </h1>
+
 
         <!-- Panel tabs -->
         <div class="flex gap-2">
@@ -77,7 +85,7 @@
         </div>
 
         <!-- Action buttons on left, search on right -->
-        <div class="px-3 py-3 border-b flex justify-between items-center flex-shrink-0 bg-gray-50 gap-2">
+        <div class="px-3 py-3 flex justify-between items-center flex-shrink-0 bg-gray-50 gap-2">
 
           <!-- Left: Action buttons -->
           <div class="inline-flex items-center gap-2">
@@ -117,7 +125,8 @@
             </div>
 
             <button @click.stop="executeSearch(panel.id)"
-              class="px-3 py-1.5 bg-theme-blue-500 text-white rounded hover:bg-theme-blue-700 text-sm" title="Search (Enter)">
+              class="px-3 py-1.5 bg-theme-blue-500 text-white rounded hover:bg-theme-blue-700 text-sm"
+              title="Search (Enter)">
               Search
             </button>
 
@@ -140,7 +149,7 @@
 
 
         <!-- Content area -->
-        <div class="flex-1 min-h-0 p-3 flex flex-col">
+        <div class="flex-1 min-h-0 px-3 pb-3 pt-1 flex flex-col bg-gray-50">
           <!-- Edit mode -->
           <textarea v-if="panel.mode === 'edit'" :value="panel.data"
             @input="updatePanelData(panel.id, ($event.target as HTMLInputElement).value)"
@@ -190,6 +199,7 @@ import { formatJson, formatXml } from '~/lib/formatters'
 import { parseXmlToTree, countXmlNodes } from '~/lib/xmlParser'
 import { useFormatterStore } from '~/stores/formatter'
 import { storeToRefs } from 'pinia'
+import ThemeToggle from '~/components/ThemeToggle.vue'
 
 const store = useFormatterStore()
 const { showToast, toastVisible } = storeToRefs(store)

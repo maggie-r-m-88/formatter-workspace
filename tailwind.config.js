@@ -56,7 +56,8 @@ export default {
       },
       // You can also extend other theme properties
       fontFamily: {
-        // 'custom': ['Your Font', 'sans-serif'],
+        logo: ['JetBrains Mono', 'monospace'],
+        //mono: ['JetBrains Mono', 'monospace'],
       },
       spacing: {
         // '128': '32rem',
