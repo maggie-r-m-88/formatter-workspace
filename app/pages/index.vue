@@ -108,7 +108,7 @@
             For better performance, nodes deeper than 2 levels are collapsed by default.
           </p>
           <button
-            @click="showLargeFileWarning = false"
+            @click="activePanel && store.updatePanel(activePanel.id, { showLargeFileWarning: false })"
             class="ml-2 px-2 text-yellow-600 hover:text-yellow-800 text-lg leading-none"
             title="Dismiss"
           >
@@ -125,7 +125,7 @@
             :searchQuery="activeSearchQuery"
             :currentMatchIndex="currentMatchIndex"
             :matchIndexCounter="matchIndexCounter"
-            :onCopy="triggerToast"
+            :onCopy="store.triggerToast"
           />
           <XmlNode
             v-else-if="selectedFormat === 'xml' && parsedXml"
@@ -134,7 +134,7 @@
             :searchQuery="activeSearchQuery"
             :currentMatchIndex="currentMatchIndex"
             :matchIndexCounter="matchIndexCounter"
-            :onCopy="triggerToast"
+            :onCopy="store.triggerToast"
           />
         </div>
       </div>
@@ -170,30 +170,52 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { computed, onMounted, nextTick } from 'vue'
 import JsonNode from '~/components/JsonNode.vue'
 import XmlNode from '~/components/XmlNode.vue'
 import { formatJson, formatXml } from '~/lib/formatters'
-import { parseXmlToTree, countXmlNodes, type XmlNode as XmlNodeType } from '~/lib/xmlParser'
+import { parseXmlToTree, countXmlNodes } from '~/lib/xmlParser'
+import { useFormatterStore } from '~/stores/formatter'
+import { storeToRefs } from 'pinia'
 
-const data = ref('')
-const parsedJson = ref<any>(null)
-const parsedXml = ref<XmlNodeType | null>(null)
-const mode = ref<'edit' | 'tree'>('edit')
-const selectedFormat = ref<'json' | 'xml'>('json')
-const collapseAll = ref(false)
-const showLargeFileWarning = ref(true)
+const store = useFormatterStore()
+const { showToast, toastVisible, activePanel } = storeToRefs(store)
 
-// Toast notification
-const showToast = ref(false)
-const toastVisible = ref(false)
+// Initialize store with first panel
+onMounted(() => {
+  store.initialize()
+})
 
-// Search functionality (node view only)
-const searchInput = ref('') // What user types
-const activeSearchQuery = ref('') // What is actually being searched
-const currentMatchIndex = ref(0) // Which match we're viewing
-const totalMatches = ref(0) // Total number of matches
-const matchIndexCounter = ref({ value: 0 }) // Shared counter for assigning match indices
+// Computed properties that reference the active panel
+const data = computed({
+  get: () => activePanel.value?.data || '',
+  set: (value: string) => {
+    if (activePanel.value) {
+      store.updatePanel(activePanel.value.id, { data: value })
+    }
+  }
+})
+
+const parsedJson = computed(() => activePanel.value?.parsedJson || null)
+const parsedXml = computed(() => activePanel.value?.parsedXml || null)
+const mode = computed(() => activePanel.value?.mode || 'edit')
+const selectedFormat = computed(() => activePanel.value?.selectedFormat || 'json')
+const collapseAll = computed(() => activePanel.value?.collapseAll || false)
+const showLargeFileWarning = computed(() => activePanel.value?.showLargeFileWarning || true)
+
+const searchInput = computed({
+  get: () => activePanel.value?.searchInput || '',
+  set: (value: string) => {
+    if (activePanel.value) {
+      store.updatePanel(activePanel.value.id, { searchInput: value })
+    }
+  }
+})
+
+const activeSearchQuery = computed(() => activePanel.value?.activeSearchQuery || '')
+const currentMatchIndex = computed(() => activePanel.value?.currentMatchIndex || 0)
+const totalMatches = computed(() => activePanel.value?.totalMatches || 0)
+const matchIndexCounter = computed(() => activePanel.value?.matchIndexCounter || { value: 0 })
 
 const nodeCount = computed(() => {
   if (selectedFormat.value === 'json' && parsedJson.value) {
@@ -223,7 +245,9 @@ function countJsonNodes(obj: any): number {
 }
 
 function selectFormat(format: 'json' | 'xml') {
-  selectedFormat.value = format
+  if (activePanel.value) {
+    store.updatePanel(activePanel.value.id, { selectedFormat: format })
+  }
   clearSearch() // Clear search when switching formats
 }
 
@@ -243,23 +267,29 @@ function prettyPrint() {
 }
 
 function showTree() {
+  if (!activePanel.value) return
+
   try {
+    let parsed: any = null
     if (selectedFormat.value === 'json') {
-      parsedJson.value = JSON.parse(data.value)
+      parsed = JSON.parse(data.value)
+      store.updatePanel(activePanel.value.id, { parsedJson: parsed, parsedXml: null })
     } else if (selectedFormat.value === 'xml') {
-      parsedXml.value = parseXmlToTree(data.value)
+      parsed = parseXmlToTree(data.value)
+      store.updatePanel(activePanel.value.id, { parsedXml: parsed, parsedJson: null })
     }
 
     // Auto-collapse for large files
     // Use nextTick to ensure nodeCount is computed after parsing
     setTimeout(() => {
-      collapseAll.value = isLargeFile.value
+      if (activePanel.value) {
+        store.updatePanel(activePanel.value.id, {
+          collapseAll: isLargeFile.value,
+          showLargeFileWarning: true,
+          mode: 'tree'
+        })
+      }
     }, 0)
-
-    // Reset warning visibility when showing tree view
-    showLargeFileWarning.value = true
-
-    mode.value = 'tree'
   } catch (e: any) {
     alert(`Invalid ${selectedFormat.value.toUpperCase()} for Node View:\n${e.message}`)
   }
@@ -267,37 +297,45 @@ function showTree() {
 }
 
 function backToEdit() {
-  mode.value = 'edit'
+  if (activePanel.value) {
+    store.updatePanel(activePanel.value.id, { mode: 'edit' })
+  }
   clearSearch() // Clear search when going back to edit
 }
 
 // Search functionality (node view only)
 function executeSearch() {
+  if (!activePanel.value) return
+
   if (!searchInput.value.trim()) {
     clearSearch()
     return
   }
 
-  // Reset the match counter
-  matchIndexCounter.value = { value: 0 }
-
-  // Set the active search query
-  activeSearchQuery.value = searchInput.value
-  currentMatchIndex.value = 0
+  // Reset the match counter and set search query
+  store.updatePanel(activePanel.value.id, {
+    matchIndexCounter: { value: 0 },
+    activeSearchQuery: searchInput.value,
+    currentMatchIndex: 0
+  })
 
   // Count matches will be done by the components
   countMatches()
 }
 
 function countMatches() {
+  if (!activePanel.value) return
+
   // Count how many nodes match the search query
-  totalMatches.value = 0
+  let matches = 0
 
   if (selectedFormat.value === 'json' && parsedJson.value) {
-    totalMatches.value = countJsonMatches(parsedJson.value, activeSearchQuery.value.toLowerCase())
+    matches = countJsonMatches(parsedJson.value, activeSearchQuery.value.toLowerCase())
   } else if (selectedFormat.value === 'xml' && parsedXml.value) {
-    totalMatches.value = countXmlMatches(parsedXml.value, activeSearchQuery.value.toLowerCase())
+    matches = countXmlMatches(parsedXml.value, activeSearchQuery.value.toLowerCase())
   }
+
+  store.updatePanel(activePanel.value.id, { totalMatches: matches })
 }
 
 function countJsonMatches(value: any, query: string): number {
@@ -356,14 +394,16 @@ function countXmlMatches(node: any, query: string): number {
 }
 
 function findNext() {
-  if (totalMatches.value === 0) return
-  currentMatchIndex.value = (currentMatchIndex.value + 1) % totalMatches.value
+  if (!activePanel.value || totalMatches.value === 0) return
+  const newIndex = (currentMatchIndex.value + 1) % totalMatches.value
+  store.updatePanel(activePanel.value.id, { currentMatchIndex: newIndex })
   scrollToCurrentMatch()
 }
 
 function findPrevious() {
-  if (totalMatches.value === 0) return
-  currentMatchIndex.value = (currentMatchIndex.value - 1 + totalMatches.value) % totalMatches.value
+  if (!activePanel.value || totalMatches.value === 0) return
+  const newIndex = (currentMatchIndex.value - 1 + totalMatches.value) % totalMatches.value
+  store.updatePanel(activePanel.value.id, { currentMatchIndex: newIndex })
   scrollToCurrentMatch()
 }
 
@@ -378,25 +418,12 @@ function scrollToCurrentMatch() {
 }
 
 function clearSearch() {
-  searchInput.value = ''
-  activeSearchQuery.value = ''
-  currentMatchIndex.value = 0
-  totalMatches.value = 0
-}
-
-// Toast notification
-function triggerToast() {
-  showToast.value = true
-  toastVisible.value = true
-
-  // Start fade out after 1.5 seconds
-  setTimeout(() => {
-    toastVisible.value = false
-  }, 1500)
-
-  // Remove from DOM after fade completes
-  setTimeout(() => {
-    showToast.value = false
-  }, 1800)
+  if (!activePanel.value) return
+  store.updatePanel(activePanel.value.id, {
+    searchInput: '',
+    activeSearchQuery: '',
+    currentMatchIndex: 0,
+    totalMatches: 0
+  })
 }
 </script>
