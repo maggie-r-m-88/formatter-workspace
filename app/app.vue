@@ -1,3 +1,8 @@
+<script setup>
+useHead({
+  title: 'Formatter Workspace'
+})
+</script>
 <template>
   <div>
  

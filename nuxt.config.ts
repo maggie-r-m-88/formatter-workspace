@@ -2,8 +2,17 @@
 export default defineNuxtConfig({
   compatibilityDate: '2025-07-15',
   devtools: { enabled: true },
-    modules: [
+  modules: [
     '@nuxtjs/tailwindcss',
     '@pinia/nuxt',
   ],
+  tailwindcss: {
+    cssPath: '~/assets/css/global.css',
+    configPath: 'tailwind.config.js',
+  },
+  app: {
+    head: {
+      title: 'Formatter Workspace', // default fallback title
+    },
+  },
 })

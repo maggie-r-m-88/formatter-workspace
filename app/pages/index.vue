@@ -1,5 +1,5 @@
 <template>
-  <div class="h-screen flex flex-col p-4 bg-gray-100 gap-4 overflow-hidden relative">
+  <div class="h-screen flex flex-col p-4 bg-gray-800 gap-4 overflow-hidden relative">
     <!-- Toast notification -->
     <div v-if="showToast"
       class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300"
@@ -10,25 +10,25 @@
     <!-- Header with title and add panel button -->
     <div class="flex items-center justify-between flex-shrink-0">
       <div class="flex items-center gap-4">
-        <h1 class="text-lg font-semibold">Formatter Workspace</h1>
+        <h1 class="text-lg font-semibold text-white">Formatter Workspace</h1>
 
         <!-- Panel tabs -->
         <div class="flex gap-2">
-          <button v-for="(panel, index) in store.panels" :key="panel.id" @click="store.setActivePanel(panel.id)" :class="[
+          <!-- <button v-for="(panel, index) in store.panels" :key="panel.id" @click="store.setActivePanel(panel.id)" :class="[
             'px-3 py-1 rounded text-sm transition-colors',
             store.activePanelId === panel.id
               ? 'bg-blue-600 text-white'
               : 'bg-gray-200 hover:bg-gray-300'
           ]">
             Panel {{ index + 1 }}
-          </button>
+          </button> -->
         </div>
       </div>
 
       <div class="flex items-center gap-3">
-        <span class="text-sm text-gray-600">{{ store.panelCount }} / 3 panels</span>
+        <span class="text-sm text-gray-400">{{ store.panelCount }} / 3 panels</span>
         <button v-if="store.canAddPanel" @click="store.addPanel()"
-          class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-2"
+          class="px-4 py-2 bg-theme-green-500 text-white rounded hover:bg-theme-green-700 flex items-center gap-2"
           title="Add new panel">
           <span class="text-xl leading-none">+</span>
           <span>Split</span>
@@ -40,49 +40,75 @@
     <div class="flex-1 flex gap-4 min-h-0">
       <!-- Each panel -->
       <div v-for="panel in store.panels" :key="panel.id"
-        class="flex-1 flex flex-col min-h-0 min-w-0 bg-white rounded-lg shadow-sm border-2 transition-colors"
-        :class="store.activePanelId === panel.id ? 'border-blue-500' : 'border-gray-200'"
+        class="flex-1 flex flex-col min-h-0 min-w-0 bg-white rounded-md shadow-sm border-2 transition-colors"
+        :class="store.activePanelId === panel.id ? 'border-theme-blue-500' : 'border-gray-200'"
         @click="store.setActivePanel(panel.id)">
-        <!-- Thin header with close button -->
-        <div class="px-3 py-1 border-b flex justify-end items-center flex-shrink-0 bg-gray-50">
+
+        <!-- Panel header with format toggle + close button -->
+        <div class="pr-3 flex justify-between items-center flex-shrink-0 bg-gray-200 rounded-t-md">
+
+          <!-- Left: JSON/XML toggle -->
+          <div class="inline-flex bg-gray-200 rounded-md">
+            <button @click.stop="selectFormat('json', panel.id)" :class="[
+              'px-3 py-3 rounded-t text-sm font-medium transition-all flex items-center gap-1.5',
+              panel.selectedFormat === 'json'
+                ? 'bg-gray-50 text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            ]">
+              <span class="font-semibold text-base">{ }</span>
+              JSON
+            </button>
+            <button @click.stop="selectFormat('xml', panel.id)" :class="[
+              'px-3 py-1.5 rounded-t text-sm font-medium transition-all flex items-center gap-1.5',
+              panel.selectedFormat === 'xml'
+                ? 'bg-gray-50 text-gray-900 shadow-sm'
+                : 'text-gray-600 hover:text-gray-900'
+            ]">
+              <span class="font-semibold text-base">&lt;/&gt;</span>
+              XML
+            </button>
+          </div>
+          <!-- Right: Close button -->
           <button v-if="store.panelCount > 1" @click.stop="store.removePanel(panel.id)"
-            class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded text-sm"
+            class="w-5 h-5 flex items-center justify-center text-gray-500 hover:text-gray-800 hover:bg-gray-200 rounded text-sm"
             title="Close panel">
             ✕
           </button>
         </div>
 
-        <!-- Format selector and search -->
-        <div class="p-3 border-b flex gap-2 items-center flex-shrink-0">
-          <div class="inline-flex items-center flex-1">
-            <button @click.stop="selectFormat('json', panel.id)" :class="[
-              'px-3 py-1.5 text-xs border border-r-0 rounded-l-full',
-              panel.selectedFormat === 'json'
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white hover:bg-gray-50'
-            ]">
-              JSON
+        <!-- Action buttons on left, search on right -->
+        <div class="px-3 py-3 border-b flex justify-between items-center flex-shrink-0 bg-gray-50 gap-2">
+
+          <!-- Left: Action buttons -->
+          <div class="inline-flex items-center gap-2">
+            <button v-if="panel.mode === 'edit'" @click.stop="showTree(panel.id)"
+              class="px-3 py-1.5 text-sm font-medium text-gray-700 border border-gray-300 hover:border-gray-400 hover:bg-gray-50 rounded transition-colors">
+              Node View
             </button>
-            <button @click.stop="selectFormat('xml', panel.id)" :class="[
-              'px-3 py-1.5 text-xs border rounded-r-full',
-              panel.selectedFormat === 'xml'
-                ? 'bg-blue-600 text-white border-blue-600'
-                : 'bg-white hover:bg-gray-50'
-            ]">
-              XML
+
+            <button v-if="panel.mode === 'tree'" @click.stop="backToEdit(panel.id)"
+              class="px-3 py-1.5 text-sm font-medium text-gray-700 border border-gray-300 hover:border-gray-400 hover:bg-gray-50 rounded transition-colors flex items-center gap-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
+              </svg>
+              Back
+            </button>
+
+            <button v-if="panel.mode === 'edit'" @click.stop="prettyPrint(panel.id)"
+              class="px-3 py-1.5 text-sm font-medium text-gray-700 border border-gray-300 hover:border-gray-400 hover:bg-gray-50 rounded transition-colors">
+              Pretty Print
             </button>
           </div>
 
 
-          <!-- Search box - only show in node view -->
-          <div v-if="panel.mode === 'tree'" class="flex gap-2 items-center">
+          <!-- Right: Search box + navigation -->
+          <div v-if="panel.mode === 'tree'" class="inline-flex items-center gap-2">
             <div class="relative">
               <input :value="getSearchInput(panel.id)"
                 @input="setSearchInput(panel.id, ($event.target as HTMLInputElement).value)" type="text"
                 placeholder="Search..." class="px-2 py-1.5 pr-7 border rounded text-sm w-48"
                 @keydown.enter="executeSearch(panel.id)" />
-
-              <!-- Clear (inside input) -->
               <button v-if="panel.activeSearchQuery" @click.stop="clearSearch(panel.id)"
                 class="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm"
                 title="Clear search" type="button">
@@ -91,7 +117,7 @@
             </div>
 
             <button @click.stop="executeSearch(panel.id)"
-              class="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm" title="Search (Enter)">
+              class="px-3 py-1.5 bg-theme-blue-500 text-white rounded hover:bg-theme-blue-700 text-sm" title="Search (Enter)">
               Search
             </button>
 
@@ -110,28 +136,8 @@
               ↓
             </button>
           </div>
-
         </div>
 
-        <!-- Action buttons -->
-        <div class="px-3 py-2 border-b flex gap-2 flex-shrink-0">
-          <button v-if="panel.mode === 'edit'" @click.stop="showTree(panel.id)"
-            class="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 text-sm">
-            Node View
-          </button>
-          <button v-if="panel.mode === 'tree'" @click.stop="backToEdit(panel.id)"
-            class="p-2 bg-gray-600 text-white rounded hover:bg-gray-700" title="Back to Edit" aria-label="Back to Edit">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-
-          <button v-if="panel.mode === 'edit'" @click.stop="prettyPrint(panel.id)"
-            class="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm">
-            Pretty Print
-          </button>
-        </div>
 
         <!-- Content area -->
         <div class="flex-1 min-h-0 p-3 flex flex-col">
@@ -146,8 +152,8 @@
           <div v-else class="flex-1 min-h-0 flex flex-col">
             <!-- Warning for large files -->
             <div v-if="getPanelNodeCount(panel) > 100 && panel.showLargeFileWarning"
-              class="mb-2 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm flex-shrink-0 flex items-start justify-between">
-              <p class="text-yellow-800">
+              class="mb-2 p-3 bg-theme-yellow-50 border border-theme-yellow-200 rounded text-sm flex-shrink-0 flex items-start justify-between">
+              <p class="text-theme-yellow-800">
                 ⚠️ Large file detected ({{ getPanelNodeCount(panel).toLocaleString() }} nodes).
                 For better performance, nodes deeper than 2 levels are collapsed by default.
               </p>

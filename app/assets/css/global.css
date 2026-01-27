@@ -1,0 +1,25 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom theme colors using CSS variables */
+@layer base {
+  :root {
+    /* You can define custom colors here */
+    --color-primary: 59 130 246; /* blue-500 */
+    --color-secondary: 16 185 129; /* green-500 */
+    --color-accent: 139 92 246; /* purple-500 */
+  }
+}
+
+/* Or use custom utility classes */
+@layer utilities {
+  .text-custom-primary {
+    color: rgb(var(--color-primary));
+  }
+  
+  .bg-custom-primary {
+    background-color: rgb(var(--color-primary));
+  }
+}
+
