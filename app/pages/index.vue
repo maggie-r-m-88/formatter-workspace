@@ -9,161 +9,208 @@
       Copied
     </div>
 
-    <h1 class="text-lg font-semibold flex-shrink-0">Formatter Workspace</h1>
+    <!-- Header with title and add panel button -->
+    <div class="flex items-center justify-between flex-shrink-0">
+      <div class="flex items-center gap-4">
+        <h1 class="text-lg font-semibold">Formatter Workspace</h1>
 
-    <!-- Main container -->
-    <div class="flex-1 flex flex-col min-h-0">
-      <!-- Format selector and search -->
-      <div class="mb-3 flex gap-2 items-center flex-shrink-0">
-        <div class="flex gap-2 items-center flex-1">
-          <label class="font-medium text-sm">Format:</label>
+        <!-- Panel tabs -->
+        <div class="flex gap-2">
           <button
-            @click="selectFormat('json')"
+            v-for="(panel, index) in store.panels"
+            :key="panel.id"
+            @click="store.setActivePanel(panel.id)"
             :class="[
-              'px-4 py-2 rounded',
-              selectedFormat === 'json'
+              'px-3 py-1 rounded text-sm transition-colors',
+              store.activePanelId === panel.id
                 ? 'bg-blue-600 text-white'
-                : 'bg-white border hover:bg-gray-50'
+                : 'bg-gray-200 hover:bg-gray-300'
             ]"
           >
-            JSON
-          </button>
-          <button
-            @click="selectFormat('xml')"
-            :class="[
-              'px-4 py-2 rounded',
-              selectedFormat === 'xml'
-                ? 'bg-blue-600 text-white'
-                : 'bg-white border hover:bg-gray-50'
-            ]"
-          >
-            XML
-          </button>
-        </div>
-
-        <!-- Search box - only show in node view -->
-        <div v-if="mode === 'tree'" class="flex gap-2 items-center">
-          <input
-            v-model="searchInput"
-            type="text"
-            placeholder="Search..."
-            class="px-3 py-2 border rounded text-sm w-64"
-            @keydown.enter="executeSearch"
-          />
-          <button
-            @click="executeSearch"
-            class="px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
-            title="Search (Enter)"
-          >
-            Search
-          </button>
-          <div v-if="activeSearchQuery && totalMatches > 0" class="text-xs text-gray-600 whitespace-nowrap">
-            {{ currentMatchIndex + 1 }} / {{ totalMatches }}
-          </div>
-          <button
-            v-if="activeSearchQuery && totalMatches > 0"
-            @click="findPrevious"
-            class="px-2 py-1 border rounded hover:bg-gray-100 text-sm"
-            title="Previous match"
-          >
-            ↑
-          </button>
-          <button
-            v-if="activeSearchQuery && totalMatches > 0"
-            @click="findNext"
-            class="px-2 py-1 border rounded hover:bg-gray-100 text-sm"
-            title="Next match"
-          >
-            ↓
-          </button>
-          <button
-            v-if="activeSearchQuery"
-            @click="clearSearch"
-            class="px-2 py-1 border rounded hover:bg-gray-100 text-sm"
-            title="Clear search"
-          >
-            ✕
+            Panel {{ index + 1 }}
           </button>
         </div>
       </div>
 
-      <!-- Textarea (input/output) -->
-      <textarea
-        v-if="mode === 'edit'"
-        v-model="data"
-        :placeholder="`Paste ${selectedFormat.toUpperCase()} here…`"
-        class="flex-1 min-h-0 w-full p-4 border rounded font-mono text-sm resize-none overflow-auto"
-        spellcheck="false"
-      />
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-gray-600">{{ store.panelCount }} / 3 panels</span>
+        <button
+          v-if="store.canAddPanel"
+          @click="store.addPanel()"
+          class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 flex items-center gap-2"
+          title="Add new panel"
+        >
+          <span class="text-xl leading-none">+</span>
+          <span>Split</span>
+        </button>
+      </div>
+    </div>
 
-      <!-- Node view -->
+    <!-- Panels container -->
+    <div class="flex-1 flex gap-4 min-h-0">
+      <!-- Each panel -->
       <div
-        v-else
-        class="flex-1 min-h-0 flex flex-col"
+        v-for="panel in store.panels"
+        :key="panel.id"
+        class="flex-1 flex flex-col min-h-0 bg-white rounded-lg shadow-sm border-2 transition-colors"
+        :class="store.activePanelId === panel.id ? 'border-blue-500' : 'border-gray-200'"
+        @click="store.setActivePanel(panel.id)"
       >
-        <!-- Warning for large files -->
-        <div v-if="isLargeFile && showLargeFileWarning" class="mb-2 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm flex-shrink-0 flex items-start justify-between">
-          <p class="text-yellow-800">
-            ⚠️ Large file detected ({{ nodeCount.toLocaleString() }} nodes).
-            For better performance, nodes deeper than 2 levels are collapsed by default.
-          </p>
+        <!-- Format selector and search -->
+        <div class="p-3 border-b flex gap-2 items-center flex-shrink-0">
+          <div class="flex gap-2 items-center flex-1">
+            <label class="font-medium text-sm">Format:</label>
+            <button
+              @click.stop="selectFormat('json', panel.id)"
+              :class="[
+                'px-3 py-1.5 rounded text-sm',
+                panel.selectedFormat === 'json'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white border hover:bg-gray-50'
+              ]"
+            >
+              JSON
+            </button>
+            <button
+              @click.stop="selectFormat('xml', panel.id)"
+              :class="[
+                'px-3 py-1.5 rounded text-sm',
+                panel.selectedFormat === 'xml'
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white border hover:bg-gray-50'
+              ]"
+            >
+              XML
+            </button>
+          </div>
+
+          <!-- Search box - only show in node view -->
+          <div v-if="panel.mode === 'tree'" class="flex gap-2 items-center">
+            <input
+              :value="panel.searchInput"
+              @input="updatePanelSearchInput(panel.id, ($event.target as HTMLInputElement).value)"
+              type="text"
+              placeholder="Search..."
+              class="px-2 py-1.5 border rounded text-sm w-48"
+              @keydown.enter="executeSearch(panel.id)"
+            />
+            <button
+              @click.stop="executeSearch(panel.id)"
+              class="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+              title="Search (Enter)"
+            >
+              Search
+            </button>
+            <div v-if="panel.activeSearchQuery && panel.totalMatches > 0" class="text-xs text-gray-600 whitespace-nowrap">
+              {{ panel.currentMatchIndex + 1 }} / {{ panel.totalMatches }}
+            </div>
+            <button
+              v-if="panel.activeSearchQuery && panel.totalMatches > 0"
+              @click.stop="findPrevious(panel.id)"
+              class="px-2 py-1 border rounded hover:bg-gray-100 text-sm"
+              title="Previous match"
+            >
+              ↑
+            </button>
+            <button
+              v-if="panel.activeSearchQuery && panel.totalMatches > 0"
+              @click.stop="findNext(panel.id)"
+              class="px-2 py-1 border rounded hover:bg-gray-100 text-sm"
+              title="Next match"
+            >
+              ↓
+            </button>
+            <button
+              v-if="panel.activeSearchQuery"
+              @click.stop="clearSearch(panel.id)"
+              class="px-2 py-1 border rounded hover:bg-gray-100 text-sm"
+              title="Clear search"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="px-3 py-2 border-b flex gap-2 flex-shrink-0">
           <button
-            @click="activePanel && store.updatePanel(activePanel.id, { showLargeFileWarning: false })"
-            class="ml-2 px-2 text-yellow-600 hover:text-yellow-800 text-lg leading-none"
-            title="Dismiss"
+            v-if="panel.mode === 'edit'"
+            @click.stop="showTree(panel.id)"
+            class="px-3 py-1.5 bg-green-600 text-white rounded hover:bg-green-700 text-sm"
           >
-            ✕
+            Node View
+          </button>
+          <button
+            v-if="panel.mode === 'tree'"
+            @click.stop="backToEdit(panel.id)"
+            class="px-3 py-1.5 bg-gray-600 text-white rounded hover:bg-gray-700 text-sm"
+          >
+            Back to Edit
+          </button>
+          <button
+            v-if="panel.mode === 'edit'"
+            @click.stop="prettyPrint(panel.id)"
+            class="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm"
+          >
+            Pretty Print
           </button>
         </div>
 
-        <div class="flex-1 min-h-0 overflow-auto bg-white border rounded p-4">
-          <JsonNode
-            v-if="selectedFormat === 'json'"
-            label="root"
-            :value="parsedJson"
-            :initiallyExpanded="collapseAll ? false : true"
-            :searchQuery="activeSearchQuery"
-            :currentMatchIndex="currentMatchIndex"
-            :matchIndexCounter="matchIndexCounter"
-            :onCopy="store.triggerToast"
+        <!-- Content area -->
+        <div class="flex-1 min-h-0 p-3 flex flex-col">
+          <!-- Edit mode -->
+          <textarea
+            v-if="panel.mode === 'edit'"
+            :value="panel.data"
+            @input="updatePanelData(panel.id, ($event.target as HTMLInputElement).value)"
+            :placeholder="`Paste ${panel.selectedFormat.toUpperCase()} here…`"
+            class="flex-1 min-h-0 w-full p-4 border rounded font-mono text-sm resize-none overflow-auto"
+            spellcheck="false"
           />
-          <XmlNode
-            v-else-if="selectedFormat === 'xml' && parsedXml"
-            :node="parsedXml"
-            :initiallyExpanded="collapseAll ? false : true"
-            :searchQuery="activeSearchQuery"
-            :currentMatchIndex="currentMatchIndex"
-            :matchIndexCounter="matchIndexCounter"
-            :onCopy="store.triggerToast"
-          />
+
+          <!-- Node view -->
+          <div
+            v-else
+            class="flex-1 min-h-0 flex flex-col"
+          >
+            <!-- Warning for large files -->
+            <div v-if="getPanelNodeCount(panel) > 100 && panel.showLargeFileWarning" class="mb-2 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm flex-shrink-0 flex items-start justify-between">
+              <p class="text-yellow-800">
+                ⚠️ Large file detected ({{ getPanelNodeCount(panel).toLocaleString() }} nodes).
+                For better performance, nodes deeper than 2 levels are collapsed by default.
+              </p>
+              <button
+                @click.stop="store.updatePanel(panel.id, { showLargeFileWarning: false })"
+                class="ml-2 px-2 text-yellow-600 hover:text-yellow-800 text-lg leading-none"
+                title="Dismiss"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div class="flex-1 min-h-0 overflow-auto bg-white border rounded p-4">
+              <JsonNode
+                v-if="panel.selectedFormat === 'json' && panel.parsedJson"
+                label="root"
+                :value="panel.parsedJson"
+                :initiallyExpanded="panel.collapseAll ? false : true"
+                :searchQuery="panel.activeSearchQuery"
+                :currentMatchIndex="panel.currentMatchIndex"
+                :matchIndexCounter="panel.matchIndexCounter"
+                :onCopy="store.triggerToast"
+              />
+              <XmlNode
+                v-else-if="panel.selectedFormat === 'xml' && panel.parsedXml"
+                :node="panel.parsedXml"
+                :initiallyExpanded="panel.collapseAll ? false : true"
+                :searchQuery="panel.activeSearchQuery"
+                :currentMatchIndex="panel.currentMatchIndex"
+                :matchIndexCounter="panel.matchIndexCounter"
+                :onCopy="store.triggerToast"
+              />
+            </div>
+          </div>
         </div>
-      </div>
-
-      <!-- Action buttons -->
-      <div class="mt-2 flex gap-2 flex-shrink-0">
-        <button
-          @click="prettyPrint"
-          class="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-          v-if="mode === 'edit'"
-        >
-          Pretty Print
-        </button>
-
-        <button
-          @click="showTree"
-          class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-          v-if="mode === 'edit'"
-        >
-          Node View
-        </button>
-
-        <button
-          @click="backToEdit"
-          class="px-4 py-2 bg-gray-300 rounded hover:bg-gray-400"
-          v-if="mode === 'tree'"
-        >
-          Back to Edit
-        </button>
       </div>
     </div>
   </div>
@@ -179,54 +226,30 @@ import { useFormatterStore } from '~/stores/formatter'
 import { storeToRefs } from 'pinia'
 
 const store = useFormatterStore()
-const { showToast, toastVisible, activePanel } = storeToRefs(store)
+const { showToast, toastVisible } = storeToRefs(store)
 
 // Initialize store with first panel
 onMounted(() => {
   store.initialize()
 })
 
-// Computed properties that reference the active panel
-const data = computed({
-  get: () => activePanel.value?.data || '',
-  set: (value: string) => {
-    if (activePanel.value) {
-      store.updatePanel(activePanel.value.id, { data: value })
-    }
-  }
-})
+// Helper functions for updating panel data
+function updatePanelData(panelId: string, value: string) {
+  store.updatePanel(panelId, { data: value })
+}
 
-const parsedJson = computed(() => activePanel.value?.parsedJson || null)
-const parsedXml = computed(() => activePanel.value?.parsedXml || null)
-const mode = computed(() => activePanel.value?.mode || 'edit')
-const selectedFormat = computed(() => activePanel.value?.selectedFormat || 'json')
-const collapseAll = computed(() => activePanel.value?.collapseAll || false)
-const showLargeFileWarning = computed(() => activePanel.value?.showLargeFileWarning || true)
+function updatePanelSearchInput(panelId: string, value: string) {
+  store.updatePanel(panelId, { searchInput: value })
+}
 
-const searchInput = computed({
-  get: () => activePanel.value?.searchInput || '',
-  set: (value: string) => {
-    if (activePanel.value) {
-      store.updatePanel(activePanel.value.id, { searchInput: value })
-    }
-  }
-})
-
-const activeSearchQuery = computed(() => activePanel.value?.activeSearchQuery || '')
-const currentMatchIndex = computed(() => activePanel.value?.currentMatchIndex || 0)
-const totalMatches = computed(() => activePanel.value?.totalMatches || 0)
-const matchIndexCounter = computed(() => activePanel.value?.matchIndexCounter || { value: 0 })
-
-const nodeCount = computed(() => {
-  if (selectedFormat.value === 'json' && parsedJson.value) {
-    return countJsonNodes(parsedJson.value)
-  } else if (selectedFormat.value === 'xml' && parsedXml.value) {
-    return countXmlNodes(parsedXml.value)
+function getPanelNodeCount(panel: any): number {
+  if (panel.selectedFormat === 'json' && panel.parsedJson) {
+    return countJsonNodes(panel.parsedJson)
+  } else if (panel.selectedFormat === 'xml' && panel.parsedXml) {
+    return countXmlNodes(panel.parsedXml)
   }
   return 0
-})
-
-const isLargeFile = computed(() => nodeCount.value > 100)
+}
 
 function countJsonNodes(obj: any): number {
   if (obj === null || typeof obj !== 'object') return 1
@@ -244,98 +267,106 @@ function countJsonNodes(obj: any): number {
   return count
 }
 
-function selectFormat(format: 'json' | 'xml') {
-  if (activePanel.value) {
-    store.updatePanel(activePanel.value.id, { selectedFormat: format })
-  }
-  clearSearch() // Clear search when switching formats
+function selectFormat(format: 'json' | 'xml', panelId: string) {
+  store.updatePanel(panelId, { selectedFormat: format })
+  clearSearch(panelId) // Clear search when switching formats
 }
 
-function prettyPrint() {
+function prettyPrint(panelId: string) {
+  const panel = store.panels.find(p => p.id === panelId)
+  if (!panel) return
+
   try {
-    const trimmed = data.value.trim()
+    const trimmed = panel.data.trim()
+    let formatted: string
 
-    if (selectedFormat.value === 'json') {
-      data.value = formatJson(trimmed)
-    } else if (selectedFormat.value === 'xml') {
-      data.value = formatXml(trimmed)
+    if (panel.selectedFormat === 'json') {
+      formatted = formatJson(trimmed)
+    } else if (panel.selectedFormat === 'xml') {
+      formatted = formatXml(trimmed)
+    } else {
+      return
     }
+
+    store.updatePanel(panelId, { data: formatted })
   } catch (e: any) {
-    alert(`Error formatting ${selectedFormat.value.toUpperCase()}: ${e.message}`)
+    alert(`Error formatting ${panel.selectedFormat.toUpperCase()}: ${e.message}`)
   }
-  clearSearch() // Clear search when formatting
+  clearSearch(panelId) // Clear search when formatting
 }
 
-function showTree() {
-  if (!activePanel.value) return
+function showTree(panelId: string) {
+  const panel = store.panels.find(p => p.id === panelId)
+  if (!panel) return
 
   try {
     let parsed: any = null
-    if (selectedFormat.value === 'json') {
-      parsed = JSON.parse(data.value)
-      store.updatePanel(activePanel.value.id, { parsedJson: parsed, parsedXml: null })
-    } else if (selectedFormat.value === 'xml') {
-      parsed = parseXmlToTree(data.value)
-      store.updatePanel(activePanel.value.id, { parsedXml: parsed, parsedJson: null })
+    if (panel.selectedFormat === 'json') {
+      parsed = JSON.parse(panel.data)
+      store.updatePanel(panelId, { parsedJson: parsed, parsedXml: null })
+    } else if (panel.selectedFormat === 'xml') {
+      parsed = parseXmlToTree(panel.data)
+      store.updatePanel(panelId, { parsedXml: parsed, parsedJson: null })
     }
 
     // Auto-collapse for large files
-    // Use nextTick to ensure nodeCount is computed after parsing
     setTimeout(() => {
-      if (activePanel.value) {
-        store.updatePanel(activePanel.value.id, {
-          collapseAll: isLargeFile.value,
+      const updatedPanel = store.panels.find(p => p.id === panelId)
+      if (updatedPanel) {
+        const nodeCount = getPanelNodeCount(updatedPanel)
+        store.updatePanel(panelId, {
+          collapseAll: nodeCount > 100,
           showLargeFileWarning: true,
           mode: 'tree'
         })
       }
     }, 0)
   } catch (e: any) {
-    alert(`Invalid ${selectedFormat.value.toUpperCase()} for Node View:\n${e.message}`)
+    alert(`Invalid ${panel.selectedFormat.toUpperCase()} for Node View:\n${e.message}`)
   }
-  clearSearch() // Clear search when switching to tree view
+  clearSearch(panelId) // Clear search when switching to tree view
 }
 
-function backToEdit() {
-  if (activePanel.value) {
-    store.updatePanel(activePanel.value.id, { mode: 'edit' })
-  }
-  clearSearch() // Clear search when going back to edit
+function backToEdit(panelId: string) {
+  store.updatePanel(panelId, { mode: 'edit' })
+  clearSearch(panelId) // Clear search when going back to edit
 }
 
 // Search functionality (node view only)
-function executeSearch() {
-  if (!activePanel.value) return
+function executeSearch(panelId: string) {
+  const panel = store.panels.find(p => p.id === panelId)
+  if (!panel) return
 
-  if (!searchInput.value.trim()) {
-    clearSearch()
+  if (!panel.searchInput.trim()) {
+    clearSearch(panelId)
     return
   }
 
   // Reset the match counter and set search query
-  store.updatePanel(activePanel.value.id, {
+  store.updatePanel(panelId, {
     matchIndexCounter: { value: 0 },
-    activeSearchQuery: searchInput.value,
+    activeSearchQuery: panel.searchInput,
     currentMatchIndex: 0
   })
 
   // Count matches will be done by the components
-  countMatches()
+  countMatches(panelId)
 }
 
-function countMatches() {
-  if (!activePanel.value) return
+function countMatches(panelId: string) {
+  const panel = store.panels.find(p => p.id === panelId)
+  if (!panel) return
 
   // Count how many nodes match the search query
   let matches = 0
 
-  if (selectedFormat.value === 'json' && parsedJson.value) {
-    matches = countJsonMatches(parsedJson.value, activeSearchQuery.value.toLowerCase())
-  } else if (selectedFormat.value === 'xml' && parsedXml.value) {
-    matches = countXmlMatches(parsedXml.value, activeSearchQuery.value.toLowerCase())
+  if (panel.selectedFormat === 'json' && panel.parsedJson) {
+    matches = countJsonMatches(panel.parsedJson, panel.activeSearchQuery.toLowerCase())
+  } else if (panel.selectedFormat === 'xml' && panel.parsedXml) {
+    matches = countXmlMatches(panel.parsedXml, panel.activeSearchQuery.toLowerCase())
   }
 
-  store.updatePanel(activePanel.value.id, { totalMatches: matches })
+  store.updatePanel(panelId, { totalMatches: matches })
 }
 
 function countJsonMatches(value: any, query: string): number {
@@ -393,33 +424,36 @@ function countXmlMatches(node: any, query: string): number {
   return count
 }
 
-function findNext() {
-  if (!activePanel.value || totalMatches.value === 0) return
-  const newIndex = (currentMatchIndex.value + 1) % totalMatches.value
-  store.updatePanel(activePanel.value.id, { currentMatchIndex: newIndex })
-  scrollToCurrentMatch()
+function findNext(panelId: string) {
+  const panel = store.panels.find(p => p.id === panelId)
+  if (!panel || panel.totalMatches === 0) return
+
+  const newIndex = (panel.currentMatchIndex + 1) % panel.totalMatches
+  store.updatePanel(panelId, { currentMatchIndex: newIndex })
+  scrollToCurrentMatch(panel.currentMatchIndex)
 }
 
-function findPrevious() {
-  if (!activePanel.value || totalMatches.value === 0) return
-  const newIndex = (currentMatchIndex.value - 1 + totalMatches.value) % totalMatches.value
-  store.updatePanel(activePanel.value.id, { currentMatchIndex: newIndex })
-  scrollToCurrentMatch()
+function findPrevious(panelId: string) {
+  const panel = store.panels.find(p => p.id === panelId)
+  if (!panel || panel.totalMatches === 0) return
+
+  const newIndex = (panel.currentMatchIndex - 1 + panel.totalMatches) % panel.totalMatches
+  store.updatePanel(panelId, { currentMatchIndex: newIndex })
+  scrollToCurrentMatch(newIndex)
 }
 
-function scrollToCurrentMatch() {
+function scrollToCurrentMatch(matchIndex: number) {
   // Find the element with the current match index
   nextTick(() => {
-    const matchElement = document.querySelector(`[data-match-index="${currentMatchIndex.value}"]`)
+    const matchElement = document.querySelector(`[data-match-index="${matchIndex}"]`)
     if (matchElement) {
       matchElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
   })
 }
 
-function clearSearch() {
-  if (!activePanel.value) return
-  store.updatePanel(activePanel.value.id, {
+function clearSearch(panelId: string) {
+  store.updatePanel(panelId, {
     searchInput: '',
     activeSearchQuery: '',
     currentMatchIndex: 0,
