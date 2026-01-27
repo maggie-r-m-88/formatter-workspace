@@ -165,14 +165,25 @@ const isCurrentMatch = computed(() => {
   return myMatchIndex.value !== null && myMatchIndex.value === props.currentMatchIndex
 })
 
+// Cache for search results to avoid expensive recursive checks on every render
+const searchCache = ref<{ query: string; result: boolean } | null>(null)
+
 // Check if this node or any descendant matches (for visibility)
 const matchesSearch = computed(() => {
   if (!props.searchQuery) return true
 
   const query = props.searchQuery.toLowerCase()
 
+  // Use cache if query hasn't changed
+  if (searchCache.value && searchCache.value.query === query) {
+    return searchCache.value.result
+  }
+
   // Check if this node or any descendant matches
-  return nodeContainsQuery(props.node, query)
+  const result = nodeContainsQuery(props.node, query)
+
+  searchCache.value = { query, result }
+  return result
 })
 
 // Helper function to check if node or any descendant contains the query

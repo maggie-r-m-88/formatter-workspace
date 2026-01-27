@@ -52,7 +52,7 @@
       <div
         v-for="panel in store.panels"
         :key="panel.id"
-        class="flex-1 flex flex-col min-h-0 bg-white rounded-lg shadow-sm border-2 transition-colors"
+        class="flex-1 flex flex-col min-h-0 min-w-0 bg-white rounded-lg shadow-sm border-2 transition-colors"
         :class="store.activePanelId === panel.id ? 'border-blue-500' : 'border-gray-200'"
         @click="store.setActivePanel(panel.id)"
       >
@@ -201,25 +201,27 @@
             </div>
 
             <div class="flex-1 min-h-0 overflow-auto bg-white border rounded p-4">
-              <JsonNode
-                v-if="panel.selectedFormat === 'json' && panel.parsedJson"
-                label="root"
-                :value="panel.parsedJson"
-                :initiallyExpanded="panel.collapseAll ? false : true"
-                :searchQuery="panel.activeSearchQuery"
-                :currentMatchIndex="panel.currentMatchIndex"
-                :matchIndexCounter="panel.matchIndexCounter"
-                :onCopy="store.triggerToast"
-              />
-              <XmlNode
-                v-else-if="panel.selectedFormat === 'xml' && panel.parsedXml"
-                :node="panel.parsedXml"
-                :initiallyExpanded="panel.collapseAll ? false : true"
-                :searchQuery="panel.activeSearchQuery"
-                :currentMatchIndex="panel.currentMatchIndex"
-                :matchIndexCounter="panel.matchIndexCounter"
-                :onCopy="store.triggerToast"
-              />
+              <div class="min-w-max">
+                <JsonNode
+                  v-if="panel.selectedFormat === 'json' && panel.parsedJson"
+                  label="root"
+                  :value="panel.parsedJson"
+                  :initiallyExpanded="panel.collapseAll ? false : true"
+                  :searchQuery="panel.activeSearchQuery"
+                  :currentMatchIndex="panel.currentMatchIndex"
+                  :matchIndexCounter="panel.matchIndexCounter"
+                  :onCopy="store.triggerToast"
+                />
+                <XmlNode
+                  v-else-if="panel.selectedFormat === 'xml' && panel.parsedXml"
+                  :node="panel.parsedXml"
+                  :initiallyExpanded="panel.collapseAll ? false : true"
+                  :searchQuery="panel.activeSearchQuery"
+                  :currentMatchIndex="panel.currentMatchIndex"
+                  :matchIndexCounter="panel.matchIndexCounter"
+                  :onCopy="store.triggerToast"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -250,8 +252,20 @@ function updatePanelData(panelId: string, value: string) {
   store.updatePanel(panelId, { data: value })
 }
 
+// Debounce timers for search input (one per panel)
+const searchDebounceTimers = new Map<string, number>()
+
 function updatePanelSearchInput(panelId: string, value: string) {
   store.updatePanel(panelId, { searchInput: value })
+
+  // Clear existing timer for this panel
+  const existingTimer = searchDebounceTimers.get(panelId)
+  if (existingTimer) {
+    clearTimeout(existingTimer)
+  }
+
+  // Don't auto-execute search - user must click Search button or press Enter
+  // This prevents performance issues from searching on every keystroke
 }
 
 function getPanelNodeCount(panel: any): number {

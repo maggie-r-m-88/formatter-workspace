@@ -34,7 +34,8 @@
         </button>
       </div>
 
-      <div v-if="expanded || isLeaf" class="ml-4">
+      <!-- Only render children if expanded (performance optimization) -->
+      <div v-if="expanded" class="ml-4">
         <template v-for="entry in entries">
           <JsonNode
             v-if="!isArray"
@@ -156,18 +157,30 @@ const isCurrentMatch = computed(() => {
   return myMatchIndex.value !== null && myMatchIndex.value === props.currentMatchIndex
 })
 
+// Cache for search results to avoid expensive JSON.stringify on every render
+const searchCache = ref<{ query: string; result: boolean } | null>(null)
+
 // Check if this node or any descendant matches (for visibility)
 const matchesSearch = computed(() => {
   if (!props.searchQuery) return true
 
   const query = props.searchQuery.toLowerCase()
 
-  // Check if label matches
+  // Check if label matches (fast check first)
   if (props.label?.toLowerCase().includes(query)) return true
 
+  // Use cache if query hasn't changed
+  if (searchCache.value && searchCache.value.query === query) {
+    return searchCache.value.result
+  }
+
   // Check if value (including all descendants) matches
+  // This is expensive, so we cache it
   const json = JSON.stringify(props.value).toLowerCase()
-  return json.includes(query)
+  const result = json.includes(query)
+
+  searchCache.value = { query, result }
+  return result
 })
 
 // Auto-expand if this node or any child matches search
