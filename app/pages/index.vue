@@ -1,5 +1,14 @@
 <template>
-  <div class="h-screen flex flex-col p-4 bg-gray-100 gap-4 overflow-hidden">
+  <div class="h-screen flex flex-col p-4 bg-gray-100 gap-4 overflow-hidden relative">
+    <!-- Toast notification -->
+    <div
+      v-if="showToast"
+      class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300"
+      :class="{ 'opacity-0': !toastVisible }"
+    >
+      Copied
+    </div>
+
     <h1 class="text-lg font-semibold flex-shrink-0">Formatter Workspace</h1>
 
     <!-- Main container -->
@@ -93,16 +102,17 @@
         class="flex-1 min-h-0 flex flex-col"
       >
         <!-- Warning for large files -->
-        <div v-if="isLargeFile" class="mb-2 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm flex-shrink-0">
-          <p class="text-yellow-800 mb-2">
+        <div v-if="isLargeFile && showLargeFileWarning" class="mb-2 p-3 bg-yellow-50 border border-yellow-200 rounded text-sm flex-shrink-0 flex items-start justify-between">
+          <p class="text-yellow-800">
             ⚠️ Large file detected ({{ nodeCount.toLocaleString() }} nodes).
             For better performance, nodes deeper than 2 levels are collapsed by default.
           </p>
           <button
-            @click="collapseAll = !collapseAll"
-            class="px-3 py-1 bg-yellow-600 text-white rounded hover:bg-yellow-700 text-xs"
+            @click="showLargeFileWarning = false"
+            class="ml-2 px-2 text-yellow-600 hover:text-yellow-800 text-lg leading-none"
+            title="Dismiss"
           >
-            {{ collapseAll ? 'Expand First 2 Levels' : 'Collapse All' }}
+            ✕
           </button>
         </div>
 
@@ -115,6 +125,7 @@
             :searchQuery="activeSearchQuery"
             :currentMatchIndex="currentMatchIndex"
             :matchIndexCounter="matchIndexCounter"
+            :onCopy="triggerToast"
           />
           <XmlNode
             v-else-if="selectedFormat === 'xml' && parsedXml"
@@ -123,6 +134,7 @@
             :searchQuery="activeSearchQuery"
             :currentMatchIndex="currentMatchIndex"
             :matchIndexCounter="matchIndexCounter"
+            :onCopy="triggerToast"
           />
         </div>
       </div>
@@ -170,6 +182,11 @@ const parsedXml = ref<XmlNodeType | null>(null)
 const mode = ref<'edit' | 'tree'>('edit')
 const selectedFormat = ref<'json' | 'xml'>('json')
 const collapseAll = ref(false)
+const showLargeFileWarning = ref(true)
+
+// Toast notification
+const showToast = ref(false)
+const toastVisible = ref(false)
 
 // Search functionality (node view only)
 const searchInput = ref('') // What user types
@@ -238,6 +255,9 @@ function showTree() {
     setTimeout(() => {
       collapseAll.value = isLargeFile.value
     }, 0)
+
+    // Reset warning visibility when showing tree view
+    showLargeFileWarning.value = true
 
     mode.value = 'tree'
   } catch (e: any) {
@@ -362,5 +382,21 @@ function clearSearch() {
   activeSearchQuery.value = ''
   currentMatchIndex.value = 0
   totalMatches.value = 0
+}
+
+// Toast notification
+function triggerToast() {
+  showToast.value = true
+  toastVisible.value = true
+
+  // Start fade out after 1.5 seconds
+  setTimeout(() => {
+    toastVisible.value = false
+  }, 1500)
+
+  // Remove from DOM after fade completes
+  setTimeout(() => {
+    showToast.value = false
+  }, 1800)
 }
 </script>

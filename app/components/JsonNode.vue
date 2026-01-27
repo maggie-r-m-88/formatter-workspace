@@ -1,5 +1,5 @@
 <template>
-  <div class="ml-4 font-mono text-sm" :class="{ 'opacity-30': searchQuery && !matchesSearch }">
+  <div class="ml-4 font-mono text-sm" :class="{ 'opcity-70': searchQuery && !matchesSearch }">
     <!-- Object / Array -->
     <div v-if="isObject">
       <div v-if="!isLeaf" class="inline-flex items-center gap-1 mb-1" :data-match-index="myMatchIndex">
@@ -25,10 +25,12 @@
 
         <button
           @click="copyNode"
-          class="ml-2 px-2 py-0.5 text-xs text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
+          class="ml-2 p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
           title="Copy JSON"
         >
-          ⋯
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          </svg>
         </button>
       </div>
 
@@ -44,6 +46,7 @@
             :searchQuery="searchQuery"
             :currentMatchIndex="currentMatchIndex"
             :matchIndexCounter="matchIndexCounter"
+            :onCopy="onCopy"
           />
           <JsonNode
             v-else
@@ -54,6 +57,7 @@
             :searchQuery="searchQuery"
             :currentMatchIndex="currentMatchIndex"
             :matchIndexCounter="matchIndexCounter"
+            :onCopy="onCopy"
           />
 
         </template>
@@ -92,12 +96,14 @@ const props = withDefaults(defineProps<{
   searchQuery?: string
   currentMatchIndex?: number
   matchIndexCounter?: { value: number }
+  onCopy?: () => void
 }>(), {
   depth: 0,
   initiallyExpanded: undefined,
   searchQuery: '',
   currentMatchIndex: 0,
-  matchIndexCounter: () => ({ value: 0 })
+  matchIndexCounter: () => ({ value: 0 }),
+  onCopy: () => {}
 })
 
 // Determine if node should be expanded by default
@@ -212,7 +218,7 @@ async function copyNode() {
   try {
     const json = JSON.stringify(props.value, null, 2)
     await navigator.clipboard.writeText(json)
-    alert('JSON copied to clipboard!')
+    props.onCopy()
   } catch (e: any) {
     alert(`Failed to copy: ${e.message}`)
   }
