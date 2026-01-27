@@ -56,6 +56,18 @@
         :class="store.activePanelId === panel.id ? 'border-blue-500' : 'border-gray-200'"
         @click="store.setActivePanel(panel.id)"
       >
+        <!-- Thin header with close button -->
+        <div class="px-3 py-1 border-b flex justify-end items-center flex-shrink-0 bg-gray-50">
+          <button
+            v-if="store.panelCount > 1"
+            @click.stop="store.removePanel(panel.id)"
+            class="w-5 h-5 flex items-center justify-center text-gray-400 hover:text-gray-600 hover:bg-gray-200 rounded text-sm"
+            title="Close panel"
+          >
+            ✕
+          </button>
+        </div>
+
         <!-- Format selector and search -->
         <div class="p-3 border-b flex gap-2 items-center flex-shrink-0">
           <div class="flex gap-2 items-center flex-1">
@@ -86,6 +98,14 @@
 
           <!-- Search box - only show in node view -->
           <div v-if="panel.mode === 'tree'" class="flex gap-2 items-center">
+            <button
+              v-if="panel.activeSearchQuery"
+              @click.stop="clearSearch(panel.id)"
+              class="px-2 py-1.5 border rounded hover:bg-gray-100 text-sm"
+              title="Clear search"
+            >
+              Clear
+            </button>
             <input
               :value="panel.searchInput"
               @input="updatePanelSearchInput(panel.id, ($event.target as HTMLInputElement).value)"
@@ -119,14 +139,6 @@
               title="Next match"
             >
               ↓
-            </button>
-            <button
-              v-if="panel.activeSearchQuery"
-              @click.stop="clearSearch(panel.id)"
-              class="px-2 py-1 border rounded hover:bg-gray-100 text-sm"
-              title="Clear search"
-            >
-              ✕
             </button>
           </div>
         </div>
@@ -217,7 +229,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, nextTick } from 'vue'
+import { onMounted, nextTick } from 'vue'
 import JsonNode from '~/components/JsonNode.vue'
 import XmlNode from '~/components/XmlNode.vue'
 import { formatJson, formatXml } from '~/lib/formatters'
