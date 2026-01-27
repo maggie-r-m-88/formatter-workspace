@@ -107,8 +107,8 @@
               Clear
             </button>
             <input
-              :value="panel.searchInput"
-              @input="updatePanelSearchInput(panel.id, ($event.target as HTMLInputElement).value)"
+              :value="getSearchInput(panel.id)"
+              @input="setSearchInput(panel.id, ($event.target as HTMLInputElement).value)"
               type="text"
               placeholder="Search..."
               class="px-2 py-1.5 border rounded text-sm w-48"
@@ -231,7 +231,7 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, nextTick } from 'vue'
+import { onMounted, nextTick, reactive } from 'vue'
 import JsonNode from '~/components/JsonNode.vue'
 import XmlNode from '~/components/XmlNode.vue'
 import { formatJson, formatXml } from '~/lib/formatters'
@@ -241,6 +241,23 @@ import { storeToRefs } from 'pinia'
 
 const store = useFormatterStore()
 const { showToast, toastVisible } = storeToRefs(store)
+
+// Local search input values (not in store to avoid lag while typing)
+const localSearchInputs = reactive<Map<string, string>>(new Map())
+
+// Get local search input for a panel
+function getSearchInput(panelId: string): string {
+  if (!localSearchInputs.has(panelId)) {
+    const panel = store.panels.find(p => p.id === panelId)
+    localSearchInputs.set(panelId, panel?.searchInput || '')
+  }
+  return localSearchInputs.get(panelId) || ''
+}
+
+// Update local search input (doesn't update store, so no lag)
+function setSearchInput(panelId: string, value: string) {
+  localSearchInputs.set(panelId, value)
+}
 
 // Initialize store with first panel
 onMounted(() => {
@@ -252,21 +269,7 @@ function updatePanelData(panelId: string, value: string) {
   store.updatePanel(panelId, { data: value })
 }
 
-// Debounce timers for search input (one per panel)
-const searchDebounceTimers = new Map<string, number>()
 
-function updatePanelSearchInput(panelId: string, value: string) {
-  store.updatePanel(panelId, { searchInput: value })
-
-  // Clear existing timer for this panel
-  const existingTimer = searchDebounceTimers.get(panelId)
-  if (existingTimer) {
-    clearTimeout(existingTimer)
-  }
-
-  // Don't auto-execute search - user must click Search button or press Enter
-  // This prevents performance issues from searching on every keystroke
-}
 
 function getPanelNodeCount(panel: any): number {
   if (panel.selectedFormat === 'json' && panel.parsedJson) {
@@ -360,18 +363,18 @@ function backToEdit(panelId: string) {
 
 // Search functionality (node view only)
 function executeSearch(panelId: string) {
-  const panel = store.panels.find(p => p.id === panelId)
-  if (!panel) return
+  const searchInput = getSearchInput(panelId)
 
-  if (!panel.searchInput.trim()) {
+  if (!searchInput.trim()) {
     clearSearch(panelId)
     return
   }
 
-  // Reset the match counter and set search query
+  // Update store with the search input and reset the match counter
   store.updatePanel(panelId, {
+    searchInput: searchInput,
     matchIndexCounter: { value: 0 },
-    activeSearchQuery: panel.searchInput,
+    activeSearchQuery: searchInput,
     currentMatchIndex: 0
   })
 
@@ -479,6 +482,9 @@ function scrollToCurrentMatch(matchIndex: number) {
 }
 
 function clearSearch(panelId: string) {
+  // Clear both local search input and store
+  localSearchInputs.set(panelId, '')
+
   store.updatePanel(panelId, {
     searchInput: '',
     activeSearchQuery: '',
