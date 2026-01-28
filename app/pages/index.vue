@@ -118,12 +118,13 @@ function showTree(panelId: string) {
   if (!panel) return
 
   try {
+    const trimmed = panel.data.trim()
     let parsed: any = null
     if (panel.selectedFormat === 'json') {
-      parsed = JSON.parse(panel.data)
+      parsed = JSON.parse(trimmed)
       store.updatePanel(panelId, { parsedJson: parsed, parsedXml: null })
     } else if (panel.selectedFormat === 'xml') {
-      parsed = parseXmlToTree(panel.data)
+      parsed = parseXmlToTree(trimmed)
       store.updatePanel(panelId, { parsedXml: parsed, parsedJson: null })
     }
 
