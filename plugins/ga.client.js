@@ -1,6 +1,12 @@
 
 
 export default defineNuxtPlugin((nuxtApp) => {
+
+  const script = document.createElement('script')
+  script.async = true
+  script.src = 'https://www.googletagmanager.com/gtag/js?id=G-VVECXSJDJP'
+  document.head.appendChild(script)
+
   // Initialize dataLayer
   window.dataLayer = window.dataLayer || []
 
