@@ -1,75 +1,50 @@
-# Nuxt Minimal Starter
+# Formatter Workspace
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+A web-based **JSON and XML formatter** built with **Nuxt 3**.  
+Easily paste, format, and navigate JSON/XML data with a tree view, search, and copy features. Supports up to 3 panes. No ads, no spam, no bloat. Everything is client-side.
+
+---
+
+## Features
+
+- **Tree View** – Navigate nested objects and arrays easily.
+- **Search** – Highlight and scroll through matches in the tree.
+- **Copy** – Copy nodes or entire JSON/XML content with one click.
+
+
+---
 
 ## Setup
 
-Make sure to install dependencies:
+### Clone the repo
 
 ```bash
-# npm
+git clone https://github.com/maggie-r-m-88/formatter-workspace.git
 npm install
-
-# pnpm
-pnpm install
-
-# yarn
-yarn install
-
-# bun
-bun install
 ```
 
-## Development Server
-
-Start the development server on `http://localhost:3000`:
+### Run locally
 
 ```bash
-# npm
 npm run dev
-
-# pnpm
-pnpm dev
-
-# yarn
-yarn dev
-
-# bun
-bun run dev
 ```
 
-## Production
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-Build the application for production:
+### Build for production
 
 ```bash
-# npm
 npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
 npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
 ```
+### Contributing
 
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+Contributions are welcome! Feel free to:
+
+- Suggest or add new features
+- Report or fix bugs
+
+### License
+
+MIT License
+
