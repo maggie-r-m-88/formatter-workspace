@@ -1,54 +1,100 @@
 <template>
-  <div class="ml-4 font-mono text-sm" :class="{ 'opcity-70': searchQuery && !matchesSearch }">
+  <div
+    class="ml-4 font-mono text-sm text-gray-800 dark:text-gray-200"
+    :class="{ 'opacity-70': searchQuery && !matchesSearch }"
+  >
     <!-- Element node -->
     <div v-if="isElement">
-      <div class="inline-flex items-center gap-1 mb-1" :data-match-index="myMatchIndex">
+      <div
+        class="inline-flex items-center gap-1 mb-1"
+        :data-match-index="myMatchIndex"
+      >
         <button
           @click="expanded = !expanded"
           :class="[
             'inline-flex items-center gap-1 select-none',
-            nodeDirectlyMatches ? 'text-gray-900 font-bold' : 'text-gray-700 hover:text-black'
+            nodeDirectlyMatches
+              ? 'text-gray-900 font-bold dark:text-gray-100'
+              : 'text-gray-700 hover:text-black dark:text-gray-300 dark:hover:text-white'
           ]"
         >
           <span class="w-4">{{ expanded ? '▼' : '▶' }}</span>
+
           <span
-            :class="[
-              nodeDirectlyMatches ? 'text-purple-900 bg-yellow-200 px-1' : 'text-purple-700',
-              isCurrentMatch ? 'ring-2 ring-blue-500' : ''
-            ]"
             class="font-semibold"
-          >&lt;{{ tagName }}&gt;</span>
-          <span v-if="hasAttributes" class="text-gray-400 text-xs">
+            :class="[
+              nodeDirectlyMatches
+                ? 'text-purple-900 bg-yellow-200 px-1 dark:text-purple-300 dark:bg-yellow-400/20'
+                : 'text-purple-700 dark:text-purple-400',
+              isCurrentMatch ? 'ring-2 ring-blue-500 dark:ring-blue-400' : ''
+            ]"
+          >
+            &lt;{{ tagName }}&gt;
+          </span>
+
+          <span
+            v-if="hasAttributes"
+            class="text-xs text-gray-400 dark:text-gray-500"
+          >
             {{ attributeCount }} attr{{ attributeCount > 1 ? 's' : '' }}
           </span>
-          <span v-if="hasChildren" class="text-gray-400 text-xs">
+
+          <span
+            v-if="hasChildren"
+            class="text-xs text-gray-400 dark:text-gray-500"
+          >
             {{ childCount }} child{{ childCount > 1 ? 'ren' : '' }}
           </span>
         </button>
 
         <button
           @click="copyNode"
-          class="ml-2 p-1 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded"
+          class="ml-2 p-1 rounded
+                 text-gray-500 hover:text-gray-700 hover:bg-gray-100
+                 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700"
           title="Copy XML"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-4 w-4"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+            />
           </svg>
         </button>
       </div>
 
+      <!-- Expanded content -->
       <div v-if="expanded" class="ml-4">
         <!-- Attributes -->
         <div v-if="hasAttributes" class="mb-2">
-          <div v-for="(attrValue, attrName) in attributes" :key="attrName" class="text-xs">
-            <span class="text-orange-600">@{{ attrName }}</span>
-            <span class="text-gray-500">=</span>
-            <span class="text-green-700">"{{ attrValue }}"</span>
+          <div
+            v-for="(attrValue, attrName) in attributes"
+            :key="attrName"
+            class="text-xs"
+          >
+            <span class="text-orange-600 dark:text-amber-400">
+              @{{ attrName }}
+            </span>
+            <span class="text-gray-500 dark:text-gray-400">=</span>
+            <span class="text-green-700 dark:text-emerald-400">
+              "{{ attrValue }}"
+            </span>
           </div>
         </div>
 
         <!-- Text content -->
-        <div v-if="textContent" class="text-green-700 mb-1">
+        <div
+          v-if="textContent"
+          class="mb-1 text-green-700 dark:text-emerald-300"
+        >
           "{{ textContent }}"
         </div>
 
@@ -68,6 +114,7 @@
     </div>
   </div>
 </template>
+
 
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'

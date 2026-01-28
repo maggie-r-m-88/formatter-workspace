@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./app/components/**/*.{js,vue,ts}",
     "./app/layouts/**/*.vue",
@@ -57,7 +58,7 @@ export default {
       // You can also extend other theme properties
       fontFamily: {
         logo: ['JetBrains Mono', 'monospace'],
-        //mono: ['JetBrains Mono', 'monospace'],
+        mono: ['JetBrains Mono', 'monospace'],
       },
       spacing: {
         // '128': '32rem',

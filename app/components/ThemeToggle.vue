@@ -1,14 +1,32 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 
-// reactive state for light/dark mode
 const isDark = ref(false)
 
-const toggleTheme = () => {
-  isDark.value = !isDark.value
-  document.documentElement.classList.toggle('dark', isDark.value)
+function applyTheme(value: boolean) {
+  document.documentElement.classList.toggle('dark', value)
 }
+
+function toggleTheme() {
+  isDark.value = !isDark.value
+  applyTheme(isDark.value)
+}
+
+onMounted(() => {
+  const media = window.matchMedia('(prefers-color-scheme: dark)')
+
+  // Initial value from system
+  isDark.value = media.matches
+  applyTheme(isDark.value)
+
+  // React to system theme changes
+  media.addEventListener('change', (e) => {
+    isDark.value = e.matches
+    applyTheme(isDark.value)
+  })
+})
 </script>
+
 
 <template>
   <button
