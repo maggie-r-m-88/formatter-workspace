@@ -248,7 +248,7 @@ function findNext(panelId: string) {
 
   const newIndex = (panel.currentMatchIndex + 1) % panel.totalMatches
   store.updatePanel(panelId, { currentMatchIndex: newIndex })
-  scrollToCurrentMatch(panel.currentMatchIndex)
+  scrollToCurrentMatch(panelId, newIndex)
 }
 
 function findPrevious(panelId: string) {
@@ -257,13 +257,18 @@ function findPrevious(panelId: string) {
 
   const newIndex = (panel.currentMatchIndex - 1 + panel.totalMatches) % panel.totalMatches
   store.updatePanel(panelId, { currentMatchIndex: newIndex })
-  scrollToCurrentMatch(newIndex)
+  scrollToCurrentMatch(panelId, newIndex)
 }
 
-function scrollToCurrentMatch(matchIndex: number) {
-  // Find the element with the current match index
+function scrollToCurrentMatch(panelId: string, matchIndex: number) {
+  // Find the element with the current match index within the specific panel
   nextTick(() => {
-    const matchElement = document.querySelector(`[data-match-index="${matchIndex}"]`)
+    // First find the panel element
+    const panelElement = document.querySelector(`[data-panel-id="${panelId}"]`)
+    if (!panelElement) return
+
+    // Then find the match element within that panel
+    const matchElement = panelElement.querySelector(`[data-match-index="${matchIndex}"]`)
     if (matchElement) {
       matchElement.scrollIntoView({ behavior: 'smooth', block: 'center' })
     }
@@ -280,6 +285,19 @@ function clearSearch(panelId: string) {
     currentMatchIndex: 0,
     totalMatches: 0
   })
+}
+
+function handleSearchKeydown(event: KeyboardEvent, panelId: string) {
+  const panel = store.panels.find(p => p.id === panelId)
+  if (!panel || !panel.activeSearchQuery || panel.totalMatches === 0) return
+
+  if (event.key === 'ArrowDown') {
+    event.preventDefault()
+    findNext(panelId)
+  } else if (event.key === 'ArrowUp') {
+    event.preventDefault()
+    findPrevious(panelId)
+  }
 }
 </script>
 <template>
@@ -330,6 +348,7 @@ function clearSearch(panelId: string) {
     <div class="flex-1 grid gap-4 min-h-0" :class="panelGridClass">
       <!-- Each panel -->
       <div v-for="panel in store.panels" :key="panel.id"
+        :data-panel-id="panel.id"
         class="flex-1 flex flex-col min-h-0 min-w-0 bg-white rounded-md shadow-sm border-2 transition-colors"
         :class="store.activePanelId === panel.id ? 'border-theme-blue-700' : 'border-gray-200'"
         @click="store.setActivePanel(panel.id)">
@@ -399,7 +418,8 @@ function clearSearch(panelId: string) {
                 @input="setSearchInput(panel.id, ($event.target as HTMLInputElement).value)" type="text"
                 placeholder="Search..."
                 class="px-2 py-1.5 pr-7 border border-gray-300 rounded text-sm w-48 shadow-[0_2px_4px_rgba(0,0,0,0.05)]"
-                @keydown.enter="executeSearch(panel.id)" />
+                @keydown.enter="executeSearch(panel.id)"
+                @keydown="handleSearchKeydown($event, panel.id)" />
               <button v-if="panel.activeSearchQuery" @click.stop="clearSearch(panel.id)"
                 class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm"
                 title="Clear search" type="button">
