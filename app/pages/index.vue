@@ -283,7 +283,7 @@ function clearSearch(panelId: string) {
 }
 </script>
 <template>
-  <div class="h-screen flex flex-col p-4 bg-[#393E46] gap-4 overflow-hidden relative">
+  <div class="h-screen flex flex-col p-4 site-bg gap-4 overflow-hidden relative">
     <!-- Toast notification -->
     <div v-if="showToast"
       class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300"
@@ -294,13 +294,11 @@ function clearSearch(panelId: string) {
     <!-- Header with title and add panel button -->
     <div class="flex items-center justify-between flex-shrink-0">
       <div class="flex items-center gap-2">
-        <h1 class="text-lg font-bold text-white font-logo tracking-tighter flex items-center gap-2">
-          <span>Formatter</span>
-
+        <h1 class="text-xl font-bold text-gray-200 font-logo tracking-tighter flex items-center gap-1">
+          <span>formatter</span>
           <!-- Inline Theme Toggle -->
           <ThemeToggle />
-
-          <span>Workspace</span>
+          <span>workspace.com</span>
         </h1>
 
 
@@ -320,7 +318,7 @@ function clearSearch(panelId: string) {
       <div class="flex items-center gap-3">
         <span class="text-sm text-gray-400">{{ store.panelCount }} / 3 panels</span>
         <button v-if="store.canAddPanel" @click="store.addPanel()"
-          class="px-4 py-2 bg-theme-green-500 text-white rounded hover:bg-theme-green-700 flex items-center gap-2 shadow-[0_2px_4px_rgba(0,0,0,0.22)] hover:shadow-[0_2px_4px_rgba(0,0,0,0.32)] transition-all"
+          class="px-4 py-2 bg-theme-green-700 text-white rounded hover:bg-theme-green-900 flex items-center gap-2 shadow-[0_2px_4px_rgba(0,0,0,0.22)] hover:shadow-[0_2px_4px_rgba(0,0,0,0.32)] transition-all"
           title="Add new panel">
           <span class="text-xl leading-none">+</span>
           <span>Split</span>
@@ -410,10 +408,10 @@ function clearSearch(panelId: string) {
             </div>
 
             <button @click.stop="executeSearch(panel.id)"
-              class="px-3 py-1.5 bg-theme-blue-500 text-white rounded hover:bg-theme-blue-700 text-sm shadow-[0_1px_3px_rgba(0,0,0,0.12)] hover:shadow-[0_2px_4px_rgba(0,0,0,0.15)] transition-all"
+              class="px-3 py-1.5 bg-theme-blue-600 text-white rounded hover:bg-theme-blue-800 text-sm shadow-[0_1px_3px_rgba(0,0,0,0.12)] hover:shadow-[0_2px_4px_rgba(0,0,0,0.15)] transition-all"
               title="Search (Enter)">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-                stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
                 <circle cx="11" cy="11" r="7" />
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
