@@ -36,7 +36,7 @@
       <div class="flex items-center gap-3">
         <span class="text-sm text-gray-400">{{ store.panelCount }} / 3 panels</span>
         <button v-if="store.canAddPanel" @click="store.addPanel()"
-          class="px-4 py-2 bg-theme-green-500 text-white rounded hover:bg-theme-green-700 flex items-center gap-2"
+          class="px-4 py-2 bg-theme-green-500 text-white rounded hover:bg-theme-green-700 flex items-center gap-2 shadow-[0_1px_3px_rgba(0,0,0,0.12)] hover:shadow-[0_2px_4px_rgba(0,0,0,0.15)] transition-all"
           title="Add new panel">
           <span class="text-xl leading-none">+</span>
           <span>Split</span>
@@ -90,12 +90,12 @@
           <!-- Left: Action buttons -->
           <div class="inline-flex items-center gap-2">
             <button v-if="panel.mode === 'edit'" @click.stop="showTree(panel.id)"
-              class="px-3 py-1.5 text-sm font-medium text-gray-700 border border-gray-300 hover:border-gray-400 hover:bg-gray-50 rounded transition-colors">
+              class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:border-gray-400 hover:shadow-sm rounded transition-all shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
               Node View
             </button>
 
             <button v-if="panel.mode === 'tree'" @click.stop="backToEdit(panel.id)"
-              class="px-3 py-1.5 text-sm font-medium text-gray-700 border border-gray-300 hover:border-gray-400 hover:bg-gray-50 rounded transition-colors flex items-center gap-1.5">
+              class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:border-gray-400 hover:shadow-sm rounded transition-all flex items-center gap-1.5 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"
                 stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7" />
@@ -104,7 +104,7 @@
             </button>
 
             <button v-if="panel.mode === 'edit'" @click.stop="prettyPrint(panel.id)"
-              class="px-3 py-1.5 text-sm font-medium text-gray-700 border border-gray-300 hover:border-gray-400 hover:bg-gray-50 rounded transition-colors">
+              class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:border-gray-400 hover:shadow-sm rounded transition-all shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
               Pretty Print
             </button>
           </div>
@@ -115,7 +115,8 @@
             <div class="relative">
               <input :value="getSearchInput(panel.id)"
                 @input="setSearchInput(panel.id, ($event.target as HTMLInputElement).value)" type="text"
-                placeholder="Search..." class="px-2 py-1.5 pr-7 border rounded text-sm w-48"
+                placeholder="Search..."
+                class="px-2 py-1.5 pr-7 border border-gray-300 rounded text-sm w-48 shadow-[0_2px_4px_rgba(0,0,0,0.05)]"
                 @keydown.enter="executeSearch(panel.id)" />
               <button v-if="panel.activeSearchQuery" @click.stop="clearSearch(panel.id)"
                 class="absolute right-1 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 text-sm"
@@ -125,7 +126,7 @@
             </div>
 
             <button @click.stop="executeSearch(panel.id)"
-              class="px-3 py-1.5 bg-theme-blue-500 text-white rounded hover:bg-theme-blue-700 text-sm"
+              class="px-3 py-1.5 bg-theme-blue-500 text-white rounded hover:bg-theme-blue-700 text-sm shadow-[0_1px_3px_rgba(0,0,0,0.12)] hover:shadow-[0_2px_4px_rgba(0,0,0,0.15)] transition-all"
               title="Search (Enter)">
               Search
             </button>
@@ -136,12 +137,14 @@
             </div>
 
             <button v-if="panel.activeSearchQuery && panel.totalMatches > 0" @click.stop="findPrevious(panel.id)"
-              class="px-2 py-1 border rounded hover:bg-gray-100 text-sm" title="Previous match">
+              class="px-2 py-1 bg-white border border-gray-300 rounded hover:bg-gray-50 hover:shadow-sm text-sm shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-all"
+              title="Previous match">
               ↑
             </button>
 
             <button v-if="panel.activeSearchQuery && panel.totalMatches > 0" @click.stop="findNext(panel.id)"
-              class="px-2 py-1 border rounded hover:bg-gray-100 text-sm" title="Next match">
+              class="px-2 py-1 bg-white border border-gray-300 rounded hover:bg-gray-50 hover:shadow-sm text-sm shadow-[0_1px_2px_rgba(0,0,0,0.05)] transition-all"
+              title="Next match">
               ↓
             </button>
           </div>
