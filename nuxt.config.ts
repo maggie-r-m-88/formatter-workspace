@@ -5,7 +5,7 @@ export default defineNuxtConfig({
   modules: [
     '@nuxtjs/tailwindcss',
     '@pinia/nuxt',
-    '@nuxtjs/google-fonts'
+    '@nuxtjs/google-fonts',
   ],
   tailwindcss: {
     cssPath: '~/assets/css/global.css',
@@ -31,24 +31,6 @@ export default defineNuxtConfig({
         { rel: 'icon', type: 'image/png', href: '/favicon-32x32.png' },
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
         { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' }
-      ],
-      script: [
-        {
-          src: 'https://www.googletagmanager.com/gtag/js?id=G-VVECXSJDJP',
-          async: true,
-        },
-        {
-          children: `
-            window.dataLayer = window.dataLayer || [];
-            function gtag(){dataLayer.push(arguments);}
-            gtag('js', new Date());
-            gtag('config', 'G-VVECXSJDJP', {
-              page_path: window.location.pathname
-            });
-          `,
-          type: 'text/javascript',
-          charset: 'utf-8'
-        }
       ]
     },
   },
@@ -61,5 +43,8 @@ export default defineNuxtConfig({
     prefetch: true,
     preconnect: true,
     preload: true
-  }
+  },
+  plugins: [
+    { src: './plugins/ga.client.js', mode: 'client' }
+  ]
 })
