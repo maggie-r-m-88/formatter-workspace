@@ -1,4 +1,5 @@
 <script setup>
+import Footer from '~/components/Footer.vue'
 useHead({
   title: 'Formatter Workspace',
   link: [
@@ -9,8 +10,9 @@ useHead({
 })
 </script>
 <template>
-  <div>
- 
+  <div class="site-bg">
     <NuxtPage />
+    <Footer />
   </div>
+
 </template>

@@ -59,6 +59,7 @@ export default {
       fontFamily: {
         logo: ['JetBrains Mono', 'monospace'],
         mono: ['JetBrains Mono', 'monospace'],
+        sans: ['Inter', 'serif']
       },
       spacing: {
         // '128': '32rem',

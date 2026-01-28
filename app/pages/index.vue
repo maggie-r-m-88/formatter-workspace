@@ -6,7 +6,7 @@ import { formatJson, formatXml } from '~/lib/formatters'
 import { parseXmlToTree, countXmlNodes } from '~/lib/xmlParser'
 import { useFormatterStore } from '~/stores/formatter'
 import { storeToRefs } from 'pinia'
-import ThemeToggle from '~/components/ThemeToggle.vue'
+import Logo from '~/components/Logo.vue'
 
 const store = useFormatterStore()
 const { showToast, toastVisible } = storeToRefs(store)
@@ -301,7 +301,7 @@ function handleSearchKeydown(event: KeyboardEvent, panelId: string) {
 }
 </script>
 <template>
-  <div class="h-screen flex flex-col p-4 site-bg gap-4 overflow-hidden relative">
+  <div class="h-screen flex flex-col p-4 gap-4 overflow-hidden relative">
     <!-- Toast notification -->
     <div v-if="showToast"
       class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-gray-800 text-white px-6 py-3 rounded-lg shadow-lg z-50 transition-opacity duration-300"
@@ -312,12 +312,7 @@ function handleSearchKeydown(event: KeyboardEvent, panelId: string) {
     <!-- Header with title and add panel button -->
     <div class="flex items-center justify-between flex-shrink-0">
       <div class="flex items-center gap-2">
-        <h1 class="text-xl font-bold text-gray-200 font-logo tracking-tighter flex items-center gap-1">
-          <span>formatter</span>
-          <!-- Inline Theme Toggle -->
-          <ThemeToggle />
-          <span>workspace.com</span>
-        </h1>
+        <Logo/>
 
 
         <!-- Panel tabs -->
