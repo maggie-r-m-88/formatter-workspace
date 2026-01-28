@@ -2,13 +2,13 @@
   <div
     class="ml-4 font-mono text-sm text-gray-800 dark:text-gray-200"
     :class="{ 'opacity-70': searchQuery && !matchesSearch }"
+    :data-match-index="myMatchIndex"
   >
     <!-- Object / Array -->
     <div v-if="isObject">
       <div
         v-if="!isLeaf"
         class="inline-flex items-center gap-1 mb-1"
-        :data-match-index="myMatchIndex"
       >
         <button
           @click="expanded = !expanded"
@@ -30,7 +30,7 @@
               isCurrentMatch ? 'ring-2 ring-blue-500 dark:ring-blue-400' : ''
             ]"
           >
-            {{ label }}
+            {{ label || 'root' }}
           </span>
 
           <span class="text-gray-400 dark:text-gray-500">
@@ -64,7 +64,7 @@
 
       <!-- Children -->
       <div v-if="expanded" class="ml-4">
-        <template v-for="entry in entries">
+        <template v-for="(entry, idx) in entries">
           <JsonNode
             v-if="!isArray"
             :key="entry.key"
@@ -79,7 +79,7 @@
           />
           <JsonNode
             v-else
-            :key="entry.id || entryIndex(entry)"
+            :key="entry.id ?? idx"
             :value="entry.value ?? entry"
             :depth="depth + 1"
             :initiallyExpanded="initiallyExpanded"
@@ -93,7 +93,7 @@
     </div>
 
     <!-- Leaf -->
-    <div v-else :data-match-index="myMatchIndex">
+    <div v-else>
       <span
         v-if="label"
         :class="[
@@ -121,7 +121,6 @@
   </div>
 </template>
 
-
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
 import JsonNode from './JsonNode.vue'
@@ -144,23 +143,21 @@ const props = withDefaults(defineProps<{
   onCopy: () => {}
 })
 
-// Determine if node should be expanded by default
-// If initiallyExpanded is explicitly false, collapse everything
-// If initiallyExpanded is explicitly true, expand first 2 levels
-// If undefined, expand first 2 levels (default behavior)
-const defaultExpanded = computed(() => {
-  if (props.initiallyExpanded === false) return false
-  if (props.initiallyExpanded === true) return props.depth < 2
-  return props.depth < 2
+const expanded = ref(props.initiallyExpanded === undefined ? props.depth < 2 : props.initiallyExpanded)
+
+const isArray = computed(() => Array.isArray(props.value))
+const isObject = computed(() => typeof props.value === 'object' && props.value !== null)
+const isLeaf = computed(() => !isObject.value)
+
+const entries = computed(() => {
+  if (!isObject.value) return []
+  if (isArray.value) return (props.value as any[]).map(v => ({ value: v }))
+  return Object.entries(props.value as Record<string, unknown>).map(([k, v]) => ({ key: k, value: v }))
 })
 
-const expanded = ref(defaultExpanded.value)
-
-// Search functionality
-// Assign a unique match index to this node if it matches
+// --- SEARCH LOGIC ---
 const myMatchIndex = ref<number | null>(null)
 
-// Check if this specific node matches (not descendants)
 const nodeDirectlyMatches = computed(() => {
   if (!props.searchQuery) {
     myMatchIndex.value = null
@@ -170,16 +167,16 @@ const nodeDirectlyMatches = computed(() => {
   const query = props.searchQuery.toLowerCase()
   let matches = false
 
-  // Check if label matches
+  // label match
   if (props.label?.toLowerCase().includes(query)) matches = true
 
-  // For leaf nodes, check the value
-  if (!isObject.value) {
-    const valueStr = String(props.value).toLowerCase()
-    if (valueStr.includes(query)) matches = true
+  // leaf value match
+  if (isLeaf.value) {
+    const valStr = String(props.value).toLowerCase()
+    if (valStr.includes(query)) matches = true
   }
 
-  // Assign match index if this node matches
+  // assign match index if this node matches
   if (matches && myMatchIndex.value === null) {
     myMatchIndex.value = props.matchIndexCounter.value++
   } else if (!matches) {
@@ -189,69 +186,21 @@ const nodeDirectlyMatches = computed(() => {
   return matches
 })
 
-// Check if this is the currently selected match
-const isCurrentMatch = computed(() => {
-  return myMatchIndex.value !== null && myMatchIndex.value === props.currentMatchIndex
-})
-
-// Cache for search results to avoid expensive JSON.stringify on every render
-const searchCache = ref<{ query: string; result: boolean } | null>(null)
-
-// Check if this node or any descendant matches (for visibility)
 const matchesSearch = computed(() => {
   if (!props.searchQuery) return true
-
   const query = props.searchQuery.toLowerCase()
-
-  // Check if label matches (fast check first)
-  if (props.label?.toLowerCase().includes(query)) return true
-
-  // Use cache if query hasn't changed
-  if (searchCache.value && searchCache.value.query === query) {
-    return searchCache.value.result
-  }
-
-  // Check if value (including all descendants) matches
-  // This is expensive, so we cache it
-  const json = JSON.stringify(props.value).toLowerCase()
-  const result = json.includes(query)
-
-  searchCache.value = { query, result }
-  return result
+  const labelMatches = props.label?.toLowerCase().includes(query)
+  const valueMatches = isLeaf.value && String(props.value).toLowerCase().includes(query)
+  const childrenMatches = JSON.stringify(props.value).toLowerCase().includes(query)
+  return labelMatches || valueMatches || childrenMatches
 })
 
-// Auto-expand if this node or any child matches search
-const shouldAutoExpand = computed(() => {
-  if (!props.searchQuery) return false
-  return matchesSearch.value
-})
-
-// Watch for search changes and auto-expand matching nodes
-watch(() => props.searchQuery, (newQuery) => {
-  if (newQuery && shouldAutoExpand.value) {
-    expanded.value = true
-  }
+const shouldAutoExpand = computed(() => props.searchQuery && matchesSearch.value)
+watch(() => props.searchQuery, () => {
+  if (shouldAutoExpand.value) expanded.value = true
 }, { immediate: true })
 
-const isArray = computed(() => Array.isArray(props.value))
-const isObject = computed(
-  () => typeof props.value === 'object' && props.value !== null
-)
-const isLeaf = computed(() => !isObject.value)
-
-const entries = computed(() => {
-  if (!isObject.value) return []
-
-  if (isArray.value) {
-    // For arrays, just return the values (omit numeric keys)
-    return (props.value as unknown[]).map((v) => ({ value: v }))
-  }
-
-  // For objects, return key/value pairs
-  return Object.entries(props.value as Record<string, unknown>).map(
-    ([key, value]) => ({ key, value })
-  )
-})
+const isCurrentMatch = computed(() => myMatchIndex.value !== null && myMatchIndex.value === props.currentMatchIndex)
 
 function formatValue(v: unknown) {
   if (v === null) return 'null'
@@ -260,15 +209,11 @@ function formatValue(v: unknown) {
   return String(v)
 }
 
-function entryIndex(entry: any) {
-  return entry?.id ?? Math.random()
-}
-
 async function copyNode() {
   try {
     const json = JSON.stringify(props.value, null, 2)
     await navigator.clipboard.writeText(json)
-    props.onCopy()
+    props.onCopy?.()
   } catch (e: any) {
     alert(`Failed to copy: ${e.message}`)
   }
