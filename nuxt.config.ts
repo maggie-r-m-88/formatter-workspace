@@ -23,16 +23,32 @@ export default defineNuxtConfig({
         { property: 'og:description', content: 'Formatter Workspace is an online tool to format, visualize, and pretty-print multiple panes of JSON and XML at once with ease.' },
         { property: 'og:type', content: 'website' },
         { property: 'og:url', content: 'https://formatter-workspace.com' },
-        { name: 'twitter:card', content: 'summary_large_image' },
         { name: 'twitter:title', content: 'Formatter Workspace - Multi-Pane JSON & XML Formatter Online' },
         { name: 'twitter:description', content: 'Format and visualize JSON/XML in multiple panes easily.' },
-        { name: 'twitter:image', content: '/og-image.png' }
       ],
       link: [
         { rel: 'icon', href: '/favicon.ico' },
-        { rel: 'icon', type: 'image/png', href: '/favicon.png' },
+        { rel: 'icon', type: 'image/png', href: '/favicon-32x32.png' },
         { rel: 'icon', type: 'image/x-icon', href: '/favicon.ico' },
         { rel: 'apple-touch-icon', sizes: '180x180', href: '/apple-touch-icon.png' }
+      ],
+      script: [
+        {
+          src: 'https://www.googletagmanager.com/gtag/js?id=G-VVECXSJDJP',
+          async: true,
+        },
+        {
+          children: `
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', 'G-VVECXSJDJP', {
+              page_path: window.location.pathname
+            });
+          `,
+          type: 'text/javascript',
+          charset: 'utf-8'
+        }
       ]
     },
   },
