@@ -11,6 +11,9 @@ import Logo from '~/components/Logo.vue'
 const store = useFormatterStore()
 const { showToast, toastVisible } = storeToRefs(store)
 
+const AUTO_COLLAPSE_NODE_LIMIT = 300
+
+
 const panelGridClass = computed(() => {
   const count = store.panelCount
 
@@ -134,7 +137,7 @@ function showTree(panelId: string) {
       if (updatedPanel) {
         const nodeCount = getPanelNodeCount(updatedPanel)
         store.updatePanel(panelId, {
-          collapseAll: nodeCount > 100,
+          collapseAll: nodeCount > AUTO_COLLAPSE_NODE_LIMIT,
           showLargeFileWarning: true,
           mode: 'tree'
         })
@@ -465,11 +468,11 @@ function handleSearchKeydown(event: KeyboardEvent, panelId: string) {
           <!-- Node view -->
           <div v-else class="flex-1 min-h-0 flex flex-col">
             <!-- Warning for large files -->
-            <div v-if="getPanelNodeCount(panel) > 100 && panel.showLargeFileWarning"
+            <div v-if="getPanelNodeCount(panel) > AUTO_COLLAPSE_NODE_LIMIT && panel.showLargeFileWarning"
               class="mb-2 p-3 bg-theme-yellow-50 border border-theme-yellow-200 rounded text-sm flex-shrink-0 flex items-start justify-between">
               <p class="text-theme-yellow-800">
                 ⚠️ Large file detected ({{ getPanelNodeCount(panel).toLocaleString() }} nodes).
-                For better performance, nodes deeper than 2 levels are collapsed by default.
+                For better performance, all nodes are collapsed by default.
               </p>
               <button @click.stop="store.updatePanel(panel.id, { showLargeFileWarning: false })"
                 class="ml-2 px-2 text-yellow-600 hover:text-yellow-800 text-lg leading-none" title="Dismiss">
